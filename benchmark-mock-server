@@ -10,9 +10,15 @@ const Handlebars = require('handlebars');
 
 const express = require('express');
 const bodyParser = require('body-parser');
-const app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({
+
+const mock_app = express();
+mock_app.use(bodyParser.json());
+mock_app.use(bodyParser.urlencoded({
+	extended: true
+}));
+const admin_app = express();
+admin_app.use(bodyParser.json());
+admin_app.use(bodyParser.urlencoded({
 	extended: true
 }));
 
@@ -78,7 +84,7 @@ class Mock {
 		this.cfg_dir_path = path.dirname(__filename) + "/mappings";
 		this.mappings = [];
 		this._register_helper();
-		this._load_configs();
+		this.load_configs();
 	}
 
 	_register_helper() {
@@ -109,7 +115,7 @@ class Mock {
 		console.log(`Found mapping ${cfg_path}`);
 	}
 
-	_load_configs() {
+	load_configs() {
 		let files = fs.readdirSync(this.cfg_dir_path);
 		_.each(files, this._load_config.bind(this));
 	}
@@ -148,21 +154,42 @@ if (cluster.isMaster) {
 	console.log(`Master ${process.pid} is running`);
 
 	// Fork workers.
+	let workers = [];
 	for (let i = 0; i < cpu_num * 2; i++) {
-		cluster.fork();
+		workers.push(cluster.fork());
 	}
 
 	cluster.on('exit', (worker, code, signal) => {
 		console.log(`worker ${worker.process.pid} died`);
 	});
+
+	admin_app.get('/', (req, res) => {
+		res.send('It works.');
+	});
+	admin_app.get('/reload', (req, res) => {
+		_.each(workers, (worker) => {
+			worker.send({
+				cmd: 'reload'
+			});
+		});
+		res.send('OK');
+	});
+	admin_app.listen(3001);
 } else {
 	console.log(`Slave ${process.pid} is running`);
 
 	const mock = new Mock();
-	app.all(/.*/, function(req, res) {
+	mock_app.all(/.*/, (req, res) => {
 		// res.send('hello world')
 		mock.handle_request(req, res);
 	});
 
-	app.listen(3000);
+	mock_app.listen(3000);
+
+	process.on('message', (msg) => {
+		if (msg.cmd == 'reload') {
+			mock.load_configs();
+			console.log(`Worker: ${process.pid} reload all configs.`);
+		}
+	});
 }
