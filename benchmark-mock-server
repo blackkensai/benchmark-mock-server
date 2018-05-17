@@ -32,6 +32,11 @@ class MappingExpector {
 		if (this.cfg.urlPath && this.cfg.urlPath != req.path) {
 			return false;
 		}
+		if (this.cfg.urlPathPattern && this.cfg.urlPathPattern != req.path) {
+			if (!new RegExp(this.cfg.urlPathPattern).test(req.path)) {
+				return false;
+			}
+		}
 		if (this.cfg.method && this.cfg.method.toLowerCase() != req.method.toLowerCase()) {
 			return false;
 		}
