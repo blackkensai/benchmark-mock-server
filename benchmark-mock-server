@@ -110,9 +110,13 @@ class Mock {
 	}
 
 	_load_config(cfg_path) {
-		let cfg = JSON.parse(fs.readFileSync(this.cfg_dir_path + '/' + cfg_path));
-		this.mappings.push(new Mapping(cfg));
-		console.log(`Found mapping ${cfg_path}`);
+		try {
+			let cfg = JSON.parse(fs.readFileSync(this.cfg_dir_path + '/' + cfg_path));
+			this.mappings.push(new Mapping(cfg));
+			console.log(`Found mapping ${cfg_path}`);
+		} catch (e) {
+			console.log(`Failed to load mapping ${cfg_path}: ${e.stack}`);
+		}
 	}
 
 	load_configs() {
