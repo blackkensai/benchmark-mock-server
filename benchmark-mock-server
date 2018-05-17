@@ -116,6 +116,7 @@ class Mock {
 	}
 
 	load_configs() {
+		this.mappings = [];
 		let files = fs.readdirSync(this.cfg_dir_path);
 		_.each(files, this._load_config.bind(this));
 	}
