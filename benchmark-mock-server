@@ -62,7 +62,13 @@ class Mapping {
 		if (this.cfg.response.headers) {
 			res.set(this.cfg.response.headers);
 		}
-		res.send(this.template(this._build_context(req)));
+		if (this.cfg.response.fixedDelayMilliseconds) {
+			setTimeout(((req, res) => {
+				res.send(this.template(this._build_context(req)));
+			}).bind(this), this.cfg.response.fixedDelayMilliseconds, req, res);
+		} else {
+			res.send(this.template(this._build_context(req)));
+		}
 		return status_code;
 	}
 }
@@ -77,8 +83,6 @@ class Mock {
 
 	_register_helper() {
 		Handlebars.registerHelper('jsonPath', (jsonbody, path) => {
-			// console.log(jsonbody);
-			// console.log(path);
 			let jsonobject = JSON.parse(jsonbody);
 			let tokens = path.split(/\]?[\.\[]/);
 			let current = null;
@@ -87,7 +91,6 @@ class Mock {
 				if (i == 0 && token != '$') {
 					throw new Handlebars.Exception('json path must start with $');
 				}
-				// console.log(`${token} ${JSON.stringify(current)}`);
 				if (token == '$') {
 					current = jsonobject;
 				} else if (_.isArray(current)) {
@@ -95,9 +98,7 @@ class Mock {
 				} else {
 					current = current[token];
 				}
-				// console.log(`${token} ${JSON.stringify(current)}`);
 			}
-			// console.log(`  jsonPath ${path} => ${current}`);
 			return new Handlebars.SafeString(current);
 		});
 	}
