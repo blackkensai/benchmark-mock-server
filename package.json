@@ -1,0 +1,18 @@
+{
+  "name": "benchmark-mock-server",
+  "version": "1.0.0",
+  "description": "mock server for benchmark",
+  "main": "benchmark-mock-server",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "blackkensai",
+  "license": "LGPL",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.3",
+    "expressjs": "^1.0.1",
+    "handlebars3": "^3.0.3",
+    "underscore": "^1.9.0"
+  }
+}

@@ -1,0 +1,167 @@
+#!/usr/bin/node
+
+const path = require('path');
+const fs = require('fs');
+const cluster = require('cluster');
+const cpu_num = require('os').cpus().length;
+
+const _ = require('underscore');
+const Handlebars = require('handlebars');
+
+const express = require('express');
+const bodyParser = require('body-parser');
+const app = express();
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+	extended: true
+}));
+
+class MappingExpector {
+	constructor(req_cfg) {
+		this.cfg = req_cfg;
+	}
+
+	check(req) {
+		// console.log(`${this.cfg.urlPath} ${req.path} ${this.cfg.urlPath != req.path}`);
+		if (this.cfg.urlPath && this.cfg.urlPath != req.path) {
+			return false;
+		}
+		if (this.cfg.method && this.cfg.method.toLowerCase() != req.method.toLowerCase()) {
+			return false;
+		}
+		return true
+	}
+}
+
+class Mapping {
+	constructor(cfg) {
+		this.cfg = cfg;
+		this.expect = new MappingExpector(cfg.request);
+		this.template = Handlebars.compile(cfg.response.body);
+	}
+
+	_build_context(req) {
+		// console.log(typeof(req.body));
+		return {
+			request: {
+				body: JSON.stringify(req.body)
+			}
+		};
+	}
+
+	check(req) {
+		return this.expect.check(req);
+	}
+
+	answer(req, res) {
+		let status_code = 200;
+		if (this.cfg.response.status) {
+			status_code = this.cfg.response.status;
+			res.status(this.cfg.response.status);
+		}
+		if (this.cfg.response.headers) {
+			res.set(this.cfg.response.headers);
+		}
+		res.send(this.template(this._build_context(req)));
+		return status_code;
+	}
+}
+
+class Mock {
+	constructor() {
+		this.cfg_dir_path = path.dirname(__filename) + "/mappings";
+		this.mappings = [];
+		this._register_helper();
+		this._load_configs();
+	}
+
+	_register_helper() {
+		Handlebars.registerHelper('jsonPath', (jsonbody, path) => {
+			// console.log(jsonbody);
+			// console.log(path);
+			let jsonobject = JSON.parse(jsonbody);
+			let tokens = path.split(/\]?[\.\[]/);
+			let current = null;
+			for (let i = 0, length1 = tokens.length; i < length1; i++) {
+				let token = tokens[i];
+				if (i == 0 && token != '$') {
+					throw new Handlebars.Exception('json path must start with $');
+				}
+				// console.log(`${token} ${JSON.stringify(current)}`);
+				if (token == '$') {
+					current = jsonobject;
+				} else if (_.isArray(current)) {
+					current = current[parseInt(token)];
+				} else {
+					current = current[token];
+				}
+				// console.log(`${token} ${JSON.stringify(current)}`);
+			}
+			// console.log(`  jsonPath ${path} => ${current}`);
+			return new Handlebars.SafeString(current);
+		});
+	}
+
+	_load_config(cfg_path) {
+		let cfg = JSON.parse(fs.readFileSync(this.cfg_dir_path + '/' + cfg_path));
+		this.mappings.push(new Mapping(cfg));
+		console.log(`Found mapping ${cfg_path}`);
+	}
+
+	_load_configs() {
+		let files = fs.readdirSync(this.cfg_dir_path);
+		_.each(files, this._load_config.bind(this));
+	}
+
+	handle_request(req, res) {
+		let ts = Date.now();
+		let status_code = 0;
+		try {
+			for (let i = 0, length = this.mappings.length; i < length; i++) {
+				let mapping = this.mappings[i];
+				if (mapping.check(req)) {
+					status_code = mapping.answer(req, res);
+					return;
+				}
+			}
+			this.handle_404(req, res);
+			status_code = 404;
+		} catch (e) {
+			this.handle_500(req, res, e);
+			status_code = 500;
+		} finally {
+			console.log(`${status_code} ${req.method} ${req.path} ${Date.now() - ts}ms`);
+		}
+	}
+
+	handle_404(req, res) {
+		res.status(404).send(`404 Not Found: ${req.method} ${req.path}`);
+	}
+
+	handle_500(req, res, e) {
+		res.status(500).send(`500 Internal Error: ${req.method} ${req.path} ${e.stack}`);
+	}
+}
+
+if (cluster.isMaster) {
+	console.log(`Master ${process.pid} is running`);
+
+	// Fork workers.
+	for (let i = 0; i < cpu_num * 2; i++) {
+		cluster.fork();
+	}
+
+	cluster.on('exit', (worker, code, signal) => {
+		console.log(`worker ${worker.process.pid} died`);
+	});
+} else {
+	console.log(`Slave ${process.pid} is running`);
+
+	const mock = new Mock();
+	app.all(/.*/, function(req, res) {
+		// res.send('hello world')
+		mock.handle_request(req, res);
+	});
+
+	app.listen(3000);
+}
