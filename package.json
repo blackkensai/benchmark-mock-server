@@ -13,6 +13,7 @@
     "express": "^4.16.3",
     "expressjs": "^1.0.1",
     "handlebars3": "^3.0.3",
-    "underscore": "^1.9.0"
+    "underscore": "^1.9.0",
+    "uuid": "^3.2.1"
   }
 }
