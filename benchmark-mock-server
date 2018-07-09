@@ -51,7 +51,12 @@ class Mapping {
 	constructor(cfg) {
 		this.cfg = cfg;
 		this.expect = new MappingExpector(cfg.request);
-		this.template = Handlebars.compile(cfg.response.body);
+		this.cfg.response.template = Handlebars.compile(cfg.response.body);
+		if (cfg.response.probabilities) {
+			_.each(cfg.response.probabilities, (probalibity) => {
+				probalibity.template = Handlebars.compile(probalibity.body);
+			});
+		}
 	}
 
 	_build_context(req) {
@@ -67,22 +72,40 @@ class Mapping {
 	}
 
 	answer(req, res) {
+		let probability_value = Math.random();
+		if (this.cfg.response.probabilities) {
+			for (var i = 0; i < this.cfg.response.probabilities.length; i++) {
+				let probability = this.cfg.response.probabilities[i];
+				if (probability_value <= probability.probability) {
+					this.answer_with(req, res, probability);
+					return;
+				}
+			}
+		}
+		this.answer_with(req, res, this.cfg.response);
+	}
+
+	answer_with(req, res, res_cfg) {
 		let status_code = 200;
-		if (this.cfg.response.status) {
-			status_code = this.cfg.response.status;
-			res.status(this.cfg.response.status);
+		if (res_cfg.status) {
+			status_code = res_cfg.status;
+			res.status(res_cfg.status);
 		}
-		if (this.cfg.response.headers) {
-			res.set(this.cfg.response.headers);
+		if (res_cfg.headers) {
+			res.set(res_cfg.headers);
 		}
-		if (this.cfg.response.fixedDelayMilliseconds) {
+		if (res_cfg.fixedDelayMilliseconds) {
 			setTimeout(((req, res) => {
-				res.send(this.template(this._build_context(req)));
-			}).bind(this), this.cfg.response.fixedDelayMilliseconds, req, res);
+				this.answer_body(req, res, res_cfg);
+			}).bind(this), res_cfg.fixedDelayMilliseconds, req, res);
 		} else {
-			res.send(this.template(this._build_context(req)));
+			this.answer_body(req, res, res_cfg);
 		}
 		return status_code;
+	}
+
+	answer_body(req, res, res_cfg) {
+		res.send(res_cfg.template(this._build_context(req)));
 	}
 }
 
@@ -156,7 +179,7 @@ class Mock {
 			this.handle_500(req, res, e);
 			status_code = 500;
 		} finally {
-			console.log(`${status_code} ${req.method} ${req.path} ${Date.now() - ts}ms`);
+			// console.log(`${status_code} ${req.method} ${req.path} ${Date.now() - ts}ms`);
 		}
 	}
 
