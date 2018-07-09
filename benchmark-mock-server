@@ -8,6 +8,8 @@ const cpu_num = require('os').cpus().length;
 const _ = require('underscore');
 const Handlebars = require('handlebars');
 const uuidv4 = require('uuid/v4');
+const parseString = require('xml2js').parseString;
+const libxmljs = require("libxmljs");
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -53,7 +55,6 @@ class Mapping {
 	}
 
 	_build_context(req) {
-		// console.log(typeof(req.body));
 		return {
 			request: {
 				body: JSON.stringify(req.body)
@@ -87,7 +88,7 @@ class Mapping {
 
 class Mock {
 	constructor() {
-		this.cfg_dir_path = path.dirname(__filename) + "/mappings";
+		this.cfg_dir_path = __dirname + "/mappings";
 		this.mappings = [];
 		this._register_helper();
 		this.load_configs();
@@ -115,6 +116,10 @@ class Mock {
 		});
 		Handlebars.registerHelper('uuid', () => {
 			return new Handlebars.SafeString(uuidv4());
+		});
+		Handlebars.registerHelper('xPath', (xmlbody, xpath) => {
+			var xmlDoc = libxmljs.parseXml(xml);
+			return new Handlebars.SafeString(xmlDoc.get(xpath).toString());
 		});
 	}
 
@@ -175,6 +180,7 @@ if (cluster.isMaster) {
 
 	cluster.on('exit', (worker, code, signal) => {
 		console.log(`worker ${worker.process.pid} died`);
+		workers.push(cluster.fork());
 	});
 
 	admin_app.get('/', (req, res) => {
@@ -194,7 +200,6 @@ if (cluster.isMaster) {
 
 	const mock = new Mock();
 	mock_app.all(/.*/, (req, res) => {
-		// res.send('hello world')
 		mock.handle_request(req, res);
 	});
 

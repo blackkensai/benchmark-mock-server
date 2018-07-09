@@ -13,7 +13,9 @@
     "express": "^4.16.3",
     "expressjs": "^1.0.1",
     "handlebars3": "^3.0.3",
+    "libxmljs": "^0.18.9-pre0",
     "underscore": "^1.9.0",
-    "uuid": "^3.2.1"
+    "uuid": "^3.2.1",
+    "xml2js": "^0.4.19"
   }
 }
