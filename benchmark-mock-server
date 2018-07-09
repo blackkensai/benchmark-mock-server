@@ -47,6 +47,22 @@ class MappingExpector {
 	}
 }
 
+class RequestContext {
+	constructor(req, res) {
+		this.request = req;
+		this.response = res;
+		this.timestamp = Date.now();
+	}
+
+	save_response_status(status) {
+		this.status = status;
+	}
+
+	end() {
+		console.log(`${this.status} ${this.request.method} ${this.request.path} ${Date.now() - this.timestamp}ms`);
+	}
+}
+
 class Mapping {
 	constructor(cfg) {
 		this.cfg = cfg;
@@ -59,7 +75,7 @@ class Mapping {
 		}
 	}
 
-	_build_context(req) {
+	_build_template_context(req) {
 		return {
 			request: {
 				body: JSON.stringify(req.body)
@@ -71,41 +87,52 @@ class Mapping {
 		return this.expect.check(req);
 	}
 
-	answer(req, res) {
+	answer(context) {
 		let probability_value = Math.random();
 		if (this.cfg.response.probabilities) {
 			for (var i = 0; i < this.cfg.response.probabilities.length; i++) {
 				let probability = this.cfg.response.probabilities[i];
 				if (probability_value <= probability.probability) {
-					this.answer_with(req, res, probability);
+					this.answer_with(context, probability);
 					return;
 				}
 			}
 		}
-		this.answer_with(req, res, this.cfg.response);
+		this.answer_with(context, this.cfg.response);
 	}
 
-	answer_with(req, res, res_cfg) {
-		let status_code = 200;
-		if (res_cfg.status) {
-			status_code = res_cfg.status;
-			res.status(res_cfg.status);
-		}
-		if (res_cfg.headers) {
-			res.set(res_cfg.headers);
-		}
+	answer_with(context, res_cfg) {
 		if (res_cfg.fixedDelayMilliseconds) {
 			setTimeout(((req, res) => {
-				this.answer_body(req, res, res_cfg);
+				this.answer_response(context, res_cfg);
 			}).bind(this), res_cfg.fixedDelayMilliseconds, req, res);
 		} else {
-			this.answer_body(req, res, res_cfg);
+			this.answer_response(context, res_cfg);
 		}
-		return status_code;
 	}
 
-	answer_body(req, res, res_cfg) {
-		res.send(res_cfg.template(this._build_context(req)));
+	answer_response(context, res_cfg) {
+		let req = context.request;
+		let res = context.response;
+		let status_code = 200;
+		try {
+			if (res_cfg.status) {
+				status_code = res_cfg.status;
+			}
+			res.status(status_code);
+			context.save_response_status(status_code);
+			if (res_cfg.headers) {
+				res.set(res_cfg.headers);
+			}
+			this.answer_body(context, res_cfg);
+			return status_code;
+		} finally {
+			context.end();
+		}
+	}
+
+	answer_body(context, res_cfg) {
+		context.response.send(res_cfg.template(this._build_template_context(context.request)));
 	}
 }
 
@@ -162,33 +189,42 @@ class Mock {
 		_.each(files, this._load_config.bind(this));
 	}
 
+	_build_request_context(req, res) {
+		return new RequestContext(req, res);
+	}
+
 	handle_request(req, res) {
-		let ts = Date.now();
-		let status_code = 0;
+		let context = this._build_request_context(req, res);
 		try {
 			for (let i = 0, length = this.mappings.length; i < length; i++) {
 				let mapping = this.mappings[i];
 				if (mapping.check(req)) {
-					status_code = mapping.answer(req, res);
+					mapping.answer(context);
 					return;
 				}
 			}
-			this.handle_404(req, res);
-			status_code = 404;
+			this.handle_404(context);
 		} catch (e) {
-			this.handle_500(req, res, e);
-			status_code = 500;
-		} finally {
-			// console.log(`${status_code} ${req.method} ${req.path} ${Date.now() - ts}ms`);
+			this.handle_500(context, e);
 		}
 	}
 
-	handle_404(req, res) {
-		res.status(404).send(`404 Not Found: ${req.method} ${req.path}`);
+	handle_404(context) {
+		try {
+			context.save_response_status(404);
+			context.response.status(404).send(`404 Not Found: ${context.request.method} ${context.request.path}`);
+		} finally {
+			context.end();
+		}
 	}
 
-	handle_500(req, res, e) {
-		res.status(500).send(`500 Internal Error: ${req.method} ${req.path} ${e.stack}`);
+	handle_500(context, e) {
+		try {
+			context.save_response_status(500);
+			context.response.status(500).send(`500 Internal Error: ${context.request.method} ${context.request.path} ${e.stack}`);
+		} finally {
+			context.end();
+		}
 	}
 }
 
