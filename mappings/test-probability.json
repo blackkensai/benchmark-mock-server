@@ -1,0 +1,22 @@
+{
+    "request": {
+        "urlPath": "/test/probability",
+        "method": "GET"
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "content-type": "application/json;charset=UTF-8"
+        },
+        "body": "{\"errorcode\":0,\"msg\":\"hahaha\"}",
+        "probabilities": [{
+            "probability": 0.1,
+            "status": 200,
+            "fixedDelayMilliseconds": 10000,
+            "headers": {
+                "content-type": "application/json;charset=UTF-8"
+            },
+            "body": "{\"errorcode\":5,\"msg\":\"hahaha\"}"
+        }]
+    }
+}
