@@ -8,7 +8,6 @@ const cpu_num = require('os').cpus().length;
 const _ = require('underscore');
 const Handlebars = require('handlebars');
 const uuidv4 = require('uuid/v4');
-const parseString = require('xml2js').parseString;
 const libxmljs = require("libxmljs");
 
 const express = require('express');
@@ -78,6 +77,11 @@ class Mapping {
 	_build_template_context(req) {
 		return {
 			request: {
+				url: req.url,
+				requestLine: {
+					path: req.path,
+					method: req.method
+				},
 				body: JSON.stringify(req.body)
 			}
 		};

@@ -1,0 +1,13 @@
+{
+    "request": {
+        "urlPath": "/t/500",
+        "method": "POST"
+    },
+    "response": {
+        "status": 500,
+        "headers": {
+            "content-type": "application/json;charset=UTF-8"
+        },
+        "body": "{\"code\":2,\"msg\":\"return failed\"}"
+    }
+}

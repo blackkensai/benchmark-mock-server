@@ -1,6 +1,6 @@
 {
     "request": {
-        "urlPath": "/test/probability",
+        "urlPath": "/t/probability",
         "method": "GET"
     },
     "response": {
@@ -8,15 +8,15 @@
         "headers": {
             "content-type": "application/json;charset=UTF-8"
         },
-        "body": "{\"errorcode\":0,\"msg\":\"hahaha\"}",
+        "body": "{\"code\":1,\"msg\":\"normal return\"}",
         "probabilities": [{
             "probability": 0.1,
             "status": 200,
-            "fixedDelayMilliseconds": 10000,
+            "fixedDelayMilliseconds": 100,
             "headers": {
                 "content-type": "application/json;charset=UTF-8"
             },
-            "body": "{\"errorcode\":5,\"msg\":\"hahaha\"}"
+            "body": "{\"code\":2,\"msg\":\"return failed\"}"
         }]
     }
 }
