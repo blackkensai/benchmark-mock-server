@@ -60,4 +60,15 @@ describe('Json', () => {
         }
         assert.ok(failed_count > 0);
     });
+    it('should return a json with external response', async () => {
+        let data = await rp({
+            uri: 'http://localhost:3000/t/body',
+            headers: {
+                "content-type": "application/json;charset=UTF-8"
+            }
+        });
+        data = JSON.parse(data);
+        assert.equal(data.code, 1);
+        assert.equal(data.msg, 'normal return');
+    });
 });

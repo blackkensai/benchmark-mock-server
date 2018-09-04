@@ -63,9 +63,12 @@ class RequestContext {
 }
 
 class Mapping {
-	constructor(cfg) {
+	constructor(cfg, cfg_dir_path) {
 		this.cfg = cfg;
 		this.expect = new MappingExpector(cfg.request);
+		if (cfg.response.body[0] == '@') {
+			cfg.response.body = fs.readFileSync(cfg_dir_path + '/' + cfg.response.body.substr(1)).toString();
+		}
 		this.cfg.response.template = Handlebars.compile(cfg.response.body);
 		if (cfg.response.probabilities) {
 			_.each(cfg.response.probabilities, (probalibity) => {
@@ -136,7 +139,8 @@ class Mapping {
 	}
 
 	answer_body(context, res_cfg) {
-		context.response.send(res_cfg.template(this._build_template_context(context.request)));
+		let response = res_cfg.template(this._build_template_context(context.request));
+		context.response.send(response);
 	}
 }
 
@@ -179,8 +183,12 @@ class Mock {
 
 	_load_config(cfg_path) {
 		try {
+			if (!/\.cfg$/.test(cfg_path)) {
+				console.log(`Skip ${cfg_path}, only read *.cfg`);
+				return;
+			}
 			let cfg = JSON.parse(fs.readFileSync(this.cfg_dir_path + '/' + cfg_path));
-			this.mappings.push(new Mapping(cfg));
+			this.mappings.push(new Mapping(cfg, this.cfg_dir_path));
 			console.log(`Found mapping ${cfg_path}`);
 		} catch (e) {
 			console.log(`Failed to load mapping ${cfg_path}: ${e.stack}`);
