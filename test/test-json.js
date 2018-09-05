@@ -101,5 +101,6 @@ describe('Json', () => {
         assert.equal(data.request_body_0, 123);
         assert.equal(data.request_body_1, 'foo');
         assert.equal(data.request_body_2, 456);
+        assert.equal(data.request_body_3, 456);
     });
 });

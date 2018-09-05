@@ -9,5 +9,6 @@
     "request_path_2": "{{request.requestLine.pathSegments.[2]}}",
     "request_body_0": {{jsonPath request.body '$.req_id'}},
     "request_body_1": "{{jsonPath request.body '$.req_name'}}",
-    "request_body_2": "{{jsonPath request.body '$.data.[1].id'}}"
+    "request_body_2": "{{jsonPath request.body '$.data.[1].id'}}",
+    "request_body_3": "{{jsonPath request.body '$.data[1].id'}}"
 }
