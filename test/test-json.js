@@ -45,7 +45,7 @@ describe('Json', () => {
     });
     it('should failed with 10% probability', async () => {
         let failed_count = 0;
-        for (let i = 0; i < 100; i++) {
+        for (let i = 0; i < 50; i++) {
             let data = await rp({
                 uri: 'http://localhost:3000/t/probability',
                 headers: {
@@ -58,7 +58,7 @@ describe('Json', () => {
                 failed_count++;
             }
         }
-        assert.ok(failed_count > 0);
+        assert.ok(failed_count > 0 && failed_count < 50);
     });
     it('should return a json with external response', async () => {
         let data = await rp({
@@ -70,5 +70,23 @@ describe('Json', () => {
         data = JSON.parse(data);
         assert.equal(data.code, 1);
         assert.equal(data.msg, 'normal return');
+    });
+    it('should return a json with response template', async () => {
+        let data = await rp({
+            method: 'POST',
+            uri: 'http://localhost:3000/t/request',
+            headers: {
+                "content-type": "application/json;charset=UTF-8"
+            }
+        });
+        console.log(data);
+        data = JSON.parse(data);
+        assert.equal(data.code, 1);
+        assert.equal(data.msg, 'normal return');
+        assert.equal(data.request_method, 'POST');
+        assert.equal(data.request_path, '/t/request');
+        assert.equal(data.request_url, '/t/request');
+        assert.equal(data.request_path_0, 't');
+        assert.equal(data.request_path_1, 'request');
     });
 });
