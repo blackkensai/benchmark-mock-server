@@ -83,6 +83,7 @@ class Mapping {
 				url: req.url,
 				requestLine: {
 					path: req.path,
+					pathSegments: req.path.split('/').splice(1),
 					method: req.method
 				},
 				body: JSON.stringify(req.body)
