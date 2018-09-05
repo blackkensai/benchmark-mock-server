@@ -84,7 +84,8 @@ class Mapping {
 				requestLine: {
 					path: req.path,
 					pathSegments: req.path.split('/').splice(1),
-					method: req.method
+					method: req.method,
+					headers: req.headers
 				},
 				body: JSON.stringify(req.body)
 			}
@@ -156,7 +157,7 @@ class Mock {
 	_register_helper() {
 		Handlebars.registerHelper('jsonPath', (jsonbody, path) => {
 			let jsonobject = JSON.parse(jsonbody);
-			let tokens = path.split(/\]?[\.\[]/);
+			let tokens = path.split(/\]?[\.\[]+/);
 			let current = null;
 			for (let i = 0, length1 = tokens.length; i < length1; i++) {
 				let token = tokens[i];

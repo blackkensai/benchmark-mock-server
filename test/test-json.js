@@ -74,19 +74,32 @@ describe('Json', () => {
     it('should return a json with response template', async () => {
         let data = await rp({
             method: 'POST',
-            uri: 'http://localhost:3000/t/request',
+            uri: 'http://localhost:3000/t/request/json',
             headers: {
                 "content-type": "application/json;charset=UTF-8"
-            }
+            },
+            body: JSON.stringify({
+                req_id: 123,
+                req_name: 'foo',
+                data: [{
+                    id: 0
+                }, {
+                    id: 456
+                }]
+            })
         });
         console.log(data);
         data = JSON.parse(data);
         assert.equal(data.code, 1);
         assert.equal(data.msg, 'normal return');
         assert.equal(data.request_method, 'POST');
-        assert.equal(data.request_path, '/t/request');
-        assert.equal(data.request_url, '/t/request');
+        assert.equal(data.request_path, '/t/request/json');
+        assert.equal(data.request_url, '/t/request/json');
         assert.equal(data.request_path_0, 't');
         assert.equal(data.request_path_1, 'request');
+        assert.equal(data.request_path_2, 'json');
+        assert.equal(data.request_body_0, 123);
+        assert.equal(data.request_body_1, 'foo');
+        assert.equal(data.request_body_2, 456);
     });
 });
