@@ -7,6 +7,7 @@ const cpu_num = require('os').cpus().length;
 
 const _ = require('underscore');
 const Handlebars = require('handlebars');
+const dateFormat = require('dateformat');
 const uuidv4 = require('uuid/v4');
 const libxmljs = require("libxmljs");
 
@@ -30,7 +31,6 @@ class MappingExpector {
 	}
 
 	check(req) {
-		// console.log(`${this.cfg.urlPath} ${req.path} ${this.cfg.urlPath != req.path}`);
 		if (this.cfg.urlPath && this.cfg.urlPath != req.path) {
 			return false;
 		}
@@ -58,7 +58,7 @@ class RequestContext {
 	}
 
 	end() {
-		console.log(`${this.status} ${this.request.method} ${this.request.path} ${Date.now() - this.timestamp}ms`);
+		console.log(`${dateFormat(new Date(), 'yyyy-mm-dd HH:MM:ss.l')} ${this.status} ${this.request.method} ${this.request.path} ${Date.now() - this.timestamp}ms`);
 	}
 }
 

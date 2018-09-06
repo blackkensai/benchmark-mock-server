@@ -88,7 +88,6 @@ describe('Json', () => {
                 }]
             })
         });
-        console.log(data);
         data = JSON.parse(data);
         assert.equal(data.code, 1);
         assert.equal(data.msg, 'normal return');
