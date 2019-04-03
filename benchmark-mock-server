@@ -9,7 +9,8 @@ const _ = require('underscore');
 const Handlebars = require('handlebars');
 const dateFormat = require('dateformat');
 const uuidv4 = require('uuid/v4');
-const libxmljs = require("libxmljs");
+const libxmljs = require('libxmljs');
+const request = require('request');
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -24,6 +25,13 @@ admin_app.use(bodyParser.json());
 admin_app.use(bodyParser.urlencoded({
 	extended: true
 }));
+
+
+let port = 3000;
+console.log(process.argv)
+if (process.argv.length > 2) {
+	port = parseInt(process.argv[process.argv.length - 1]);
+}
 
 class MappingExpector {
 	constructor(req_cfg) {
@@ -267,7 +275,7 @@ if (cluster.isMaster) {
 		});
 		res.send('OK');
 	});
-	admin_app.listen(3001);
+	admin_app.listen(port + 1);
 } else {
 	console.log(`Slave ${process.pid} is running`);
 
@@ -276,7 +284,7 @@ if (cluster.isMaster) {
 		mock.handle_request(req, res);
 	});
 
-	mock_app.listen(3000);
+	mock_app.listen(port);
 
 	process.on('message', (msg) => {
 		if (msg.cmd == 'reload') {
