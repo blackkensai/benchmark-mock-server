@@ -13,11 +13,12 @@
     "dateformat": "^3.0.3",
     "express": "^4.16.3",
     "expressjs": "^1.0.1",
-    "handlebars3": "^3.0.3",
+    "handlebars": "^4.7.2",
     "libxmljs": "^0.19.5",
     "underscore": "^1.9.0",
     "uuid": "^3.2.1",
-    "xml2js": "^0.4.19"
+    "xml2js": "^0.4.19",
+    "xmljs": "^0.3.2"
   },
   "devDependencies": {
     "request-promise-native": "^1.0.5",
