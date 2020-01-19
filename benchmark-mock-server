@@ -9,7 +9,7 @@ const _ = require('underscore');
 const Handlebars = require('handlebars');
 const dateFormat = require('dateformat');
 const uuidv4 = require('uuid/v4');
-const libxmljs = require('libxmljs');
+// const libxmljs = require('libxmljs');
 const request = require('request');
 
 const express = require('express');
@@ -33,6 +33,26 @@ if (process.argv.length > 2) {
 	port = parseInt(process.argv[process.argv.length - 1]);
 }
 
+function jsonPath2Value(path, jsonbody) {
+	let jsonobject = JSON.parse(jsonbody);
+	let tokens = path.split(/\]?[\.\[]+/);
+	let current = null;
+	for (let i = 0, length1 = tokens.length; i < length1; i++) {
+		let token = tokens[i];
+		if (i == 0 && token != '$') {
+			throw new Handlebars.Exception('json path must start with $');
+		}
+		if (token == '$') {
+			current = jsonobject;
+		} else if (_.isArray(current)) {
+			current = current[parseInt(token)];
+		} else {
+			current = current[token];
+		}
+	}
+	return current;
+}
+
 class MappingExpector {
 	constructor(req_cfg) {
 		this.cfg = req_cfg;
@@ -50,7 +70,10 @@ class MappingExpector {
 		if (this.cfg.method && this.cfg.method.toLowerCase() != req.method.toLowerCase()) {
 			return false;
 		}
-		return true
+		if (this.cfg.bodyJsonPath && this.cfg.bodyJsonValuePattern && !new RegExp(this.cfg.bodyJsonValuePattern).test(jsonPath2Value(this.cfg.bodyJsonPath, JSON.stringify(req.body)))) {
+			return false;
+		}
+		return true;
 	}
 }
 
@@ -164,31 +187,15 @@ class Mock {
 
 	_register_helper() {
 		Handlebars.registerHelper('jsonPath', (jsonbody, path) => {
-			let jsonobject = JSON.parse(jsonbody);
-			let tokens = path.split(/\]?[\.\[]+/);
-			let current = null;
-			for (let i = 0, length1 = tokens.length; i < length1; i++) {
-				let token = tokens[i];
-				if (i == 0 && token != '$') {
-					throw new Handlebars.Exception('json path must start with $');
-				}
-				if (token == '$') {
-					current = jsonobject;
-				} else if (_.isArray(current)) {
-					current = current[parseInt(token)];
-				} else {
-					current = current[token];
-				}
-			}
-			return new Handlebars.SafeString(current);
+			return new Handlebars.SafeString(jsonPath2Value(jsonbody, path));
 		});
 		Handlebars.registerHelper('uuid', () => {
 			return new Handlebars.SafeString(uuidv4());
 		});
-		Handlebars.registerHelper('xPath', (xmlbody, xpath) => {
-			var xmlDoc = libxmljs.parseXml(xml);
-			return new Handlebars.SafeString(xmlDoc.get(xpath).toString());
-		});
+		// Handlebars.registerHelper('xPath', (xmlbody, xpath) => {
+		// 	var xmlDoc = libxmljs.parseXml(xml);
+		// 	return new Handlebars.SafeString(xmlDoc.get(xpath).toString());
+		// });
 	}
 
 	_load_config(cfg_path) {
