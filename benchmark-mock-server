@@ -187,7 +187,7 @@ class Mock {
 
 	_register_helper() {
 		Handlebars.registerHelper('jsonPath', (jsonbody, path) => {
-			return new Handlebars.SafeString(jsonPath2Value(jsonbody, path));
+			return new Handlebars.SafeString(jsonPath2Value(path, jsonbody));
 		});
 		Handlebars.registerHelper('uuid', () => {
 			return new Handlebars.SafeString(uuidv4());
