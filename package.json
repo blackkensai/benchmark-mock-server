@@ -18,11 +18,12 @@
     "underscore": "^1.9.0",
     "uuid": "^3.2.1",
     "xml2js": "^0.4.19",
-    "xmljs": "^0.3.2"
+    "xmljs": "^0.3.2",
+    "minimist": ">=1.2.3"
   },
   "devDependencies": {
-    "request-promise-native": "^1.0.5",
+    "mocha": "^7.1.1",
     "request": "^2.88.0",
-    "mocha": "^5.2.0"
+    "request-promise-native": "^1.0.5"
   }
 }
